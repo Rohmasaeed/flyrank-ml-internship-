@@ -1,9 +1,3 @@
----
-
-layout: default
-title: Content Opportunity Scoring
-----------------------------------
-
 # Content Opportunity Scoring
 
 ## FlyRank ML Internship — Lane 2
@@ -22,23 +16,15 @@ The goal is not to predict Google's algorithm or claim causality. Instead, the a
 
 ---
 
-## Approach
+## Introduction / Problem
 
-The project uses historical content-performance data and a 28-day historical window to construct page-level features. A future 28-day window is used to define the observed outcome.
+Content teams need a repeatable way to decide which pages deserve attention first. This project develops a scoring approach that uses historical search and engagement signals to prioritize pages for human review.
 
-The modeling workflow compares machine-learning approaches for identifying pages associated with future performance declines and evaluates their usefulness for prioritization.
-
-### Key principles
-
-* Historical information is used to construct model features.
-* Future performance is used only to define the evaluation outcome.
-* Target leakage is avoided by excluding outcome-derived features.
-* Evaluation focuses on ranking and prioritization, not only overall classification accuracy.
-* Results are presented as decision support for human review rather than automated SEO decisions.
+The output is intended as decision support rather than an automated content decision system.
 
 ---
 
-## Dataset
+## Data
 
 The analysis uses the public-safe FlyRank internship warehouse containing anonymized content-performance data.
 
@@ -51,13 +37,15 @@ The workflow uses:
 * Historical activity windows
 * Future performance windows
 
-The dataset and processing workflow are documented in the project repository.
+The analysis uses a 28-day historical window and a 28-day future window.
 
 ---
 
 ## Methodology
 
-The analysis aggregates historical page performance over a 28-day window and creates features such as:
+Historical page performance is aggregated over a 28-day window.
+
+The model uses historical-only features including:
 
 * Historical impressions
 * Historical clicks
@@ -73,46 +61,41 @@ The analysis aggregates historical page performance over a 28-day window and cre
 * Low-CTR signal
 * Low-engagement signal
 
-A binary refresh-opportunity label is created from observed future declines across multiple performance signals.
+A refresh-opportunity label is created from observed future declines across multiple performance signals.
 
-The final model uses **historical-only features** so that information from the future outcome does not leak into the prediction process.
+Outcome-derived features are excluded from the final model to prevent target leakage.
 
 ---
 
 ## Results
 
-The final quantitative results are reported in the research paper after the leakage-safe model has been rerun.
+The final model results will be reported using the leakage-safe model after the corrected notebook has been rerun.
 
-The analysis evaluates models using ranking-oriented measures such as **Precision@K** and average precision, because the practical goal is to identify a manageable shortlist of pages for human review.
+Evaluation focuses on ranking-oriented measures such as **Precision@K** and average precision because the practical goal is to identify a manageable shortlist of pages for human review.
 
-> **Important:** Results should be interpreted as observed associations and prioritization signals, not causal effects or predictions of Google's ranking algorithm.
-
----
-
-## Limitations
-
-This project has several important limitations:
-
-1. The dataset is observational and does not establish causality.
-2. Search and engagement performance can be affected by many external factors.
-3. The refresh-opportunity label is based on predefined decline thresholds.
-4. A model score does not guarantee that a page needs updating.
-5. Human review remains necessary before taking content actions.
-6. Results may vary across clients, content types, and time periods.
+Results are interpreted as observed associations and prioritization signals, not causal effects or predictions of Google's ranking algorithm.
 
 ---
 
-## Recommendations
+## Limitations & Honest Framing
 
-The resulting scores are intended to support a practical review queue.
+This analysis is observational and does not establish causality.
 
-Pages with stronger opportunity signals can be prioritized for:
+Search and engagement performance can be affected by many external factors. The refresh-opportunity label depends on predefined decline thresholds, and a high model score does not guarantee that a page needs updating.
 
-1. **Refresh** — review declining or weakening content.
-2. **Expansion** — investigate opportunities to improve coverage.
-3. **Protection** — monitor valuable pages showing risk signals.
-4. **Pruning** — investigate consistently weak or low-value content.
-5. **Monitoring** — continue tracking uncertain or borderline pages.
+The results should therefore be treated as **decision support for human review**.
+
+---
+
+## Ranked Recommendations
+
+The resulting scores can support the following review priorities:
+
+1. **Refresh** — investigate pages showing meaningful performance deterioration.
+2. **Expand** — investigate opportunities to improve useful content coverage.
+3. **Protect** — monitor valuable pages showing potential risk.
+4. **Prune** — investigate consistently weak or low-value content.
+5. **Monitor** — continue tracking uncertain or borderline pages.
 
 These recommendations should be combined with editorial judgment and business context.
 
@@ -120,43 +103,22 @@ These recommendations should be combined with editorial judgment and business co
 
 ## Reproducibility
 
-The complete project is available in the GitHub repository, including:
+The complete project is available in the GitHub repository, including the capstone notebook, research paper, data-processing workflow, and project documentation.
 
-* Capstone notebook
-* Research paper
-* Data-processing workflow
-* Project documentation
-* Output artifacts
-* Reproducibility information
+**Project Repository:**
+https://github.com/Rohmasaeed/flyrank-ml-internship-
 
-### Project Repository
-
-[View the FlyRank ML Internship repository →](https://github.com/Rohmasaeed/flyrank-ml-internship-)
-
-### Research Paper Source
-
-[View the research paper source →](work/paper/research_paper)
+**Research Paper Source:**
+work/paper/research_paper.md
 
 ---
 
 ## Acknowledgments & Data Credit
 
-This project was completed as part of the **FlyRank ML Internship**, Lane 2: Refresh / Content Opportunity Scoring.
+Built on the **FlyRank ML Internship dataset**.
 
-The analysis uses the public-safe anonymized FlyRank internship dataset and follows the provided project constraints around data handling, reproducibility, and honest interpretation.
+This project was completed as part of the FlyRank ML Internship, Lane 2: Refresh / Content Opportunity Scoring.
 
----
+The analysis follows the project requirements around public-safe data handling, reproducibility, and honest interpretation.
 
-### About the Author
-
-**Rohma Saeed**
-BS Data Science Student
-
-This project demonstrates practical work in:
-
-**Python · DuckDB · Pandas · Machine Learning · Data Analysis · Content Analytics · Research Communication**
-
----
-
-**Research focus:** Content Opportunity Scoring for Human Review
 **Internship lane:** Lane 2 — Refresh / Content Opportunity Scoring
