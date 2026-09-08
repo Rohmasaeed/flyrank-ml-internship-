@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Content Opportunity Scoring for Prioritizing Pages for Human Review</title>
+
+  <meta name="description" content="FlyRank ML Internship Capstone — Lane 2: Refresh / Content Opportunity Scoring">
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      line-height: 1.75;
+      color: #242424;
+      background: #f7f7fb;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 40px auto;
+      padding: 50px 60px;
+      background: white;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+      border-radius: 12px;
+    }
+
+    h1 {
+      font-size: 38px;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      color: #222;
+    }
+
+    h2 {
+      margin-top: 45px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #eee;
+      color: #333;
+    }
+
+    h3 {
+      margin-top: 30px;
+      color: #444;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: #666;
+      margin-bottom: 35px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #f0eef8;
+      color: #5d4b8b;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
+
+    .abstract {
+      background: #f8f7fc;
+      border-left: 5px solid #6c5a9e;
+      padding: 22px 25px;
+      margin: 25px 0;
+      border-radius: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0 30px;
+      font-size: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 11px 13px;
+      text-align: left;
+    }
+
+    th {
+      background: #f2f2f5;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    code {
+      background: #f2f2f2;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 90%;
+    }
+
+    blockquote {
+      border-left: 4px solid #aaa;
+      margin: 20px 0;
+      padding-left: 20px;
+      font-style: italic;
+      color: #555;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    .warning {
+      background: #fff7e6;
+      border: 1px solid #f0d99c;
+      padding: 18px 22px;
+      border-radius: 7px;
+      margin: 20px 0;
+    }
+
+    .footer {
+      margin-top: 50px;
+      padding-top: 25px;
+      border-top: 1px solid #ddd;
+      color: #666;
+      font-size: 14px;
+    }
+
+    a {
+      color: #5d4b8b;
+    }
+
+    @media (max-width: 700px) {
+      .container {
+        margin: 0;
+        padding: 25px 20px;
+        border-radius: 0;
+      }
+
+      h1 {
+        font-size: 29px;
+      }
+
+      table {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <span class="badge">FlyRank ML Internship · Lane 2</span>
+
+  <h1>Content Opportunity Scoring for Prioritizing Pages for Human Review</h1>
+
+  <p class="subtitle">
+    Refresh / Content Opportunity Scoring
+  </p>
+
+  <div class="abstract">
+    <h2>Abstract</h2>
+
+    <p>
+      This study asks which content pages should be prioritized for human review
+      when observed search and engagement performance deteriorates. Using the
+      FlyRank ML Internship warehouse, page-level performance signals were
+      aggregated into repeated 28-day historical feature windows and compared
+      with subsequent 28-day performance windows. A transparent rule-based
+      baseline was compared with Logistic Regression and Random Forest models
+      using chronological validation. In the reported notebook results, Random
+      Forest achieved the strongest ranking performance, with an Average
+      Precision of <strong>0.690</strong> compared with <strong>0.639</strong>
+      for Logistic Regression, and Precision@20 and Precision@50 of
+      <strong>1.00</strong> on the chronological test set. These results are
+      treated as an exploratory ranking experiment rather than evidence of
+      causal impact, and a target-leakage issue identified in one feature means
+      the reported machine-learning metrics should not be interpreted as a
+      fully leakage-free estimate of real-world performance.
+    </p>
+  </div>
+
+  <h2>1. Introduction / Problem Statement</h2>
+
+  <p>
+    Content teams may have many pages that could potentially benefit from
+    review, but reviewing every page with the same priority is inefficient.
+  </p>
+
+  <p>
+    The purpose of this project is to develop a repeatable content-opportunity
+    scoring system that uses observed search and engagement signals to identify
+    pages that should be considered for human review.
+  </p>
+
+  <p>The research question is:</p>
+
+  <blockquote>
+    <strong>
+      Which pages should be reviewed first for refresh, expansion, protection,
+      pruning, or monitoring based on observed search and engagement signals?
+    </strong>
+  </blockquote>
+
+  <p>
+    The decision supported by this analysis is the prioritization of pages for
+    human review.
+  </p>
+
+  <p>
+    The system is not intended to automatically decide whether a page should
+    be changed. Instead, it creates a ranked queue that can help a reviewer
+    decide where to begin.
+  </p>
+
+  <p>
+    This capstone follows <strong>Lane 2: Refresh / Content Opportunity
+    Scoring</strong> of the FlyRank ML Internship.
+  </p>
+
+  <p>
+    The analysis focuses on observed historical performance and subsequent
+    deterioration. It does not claim that refreshing a page causes future
+    performance improvement, and it does not attempt to establish causal
+    relationships with search-engine ranking algorithms.
+  </p>
+
+
+  <h2>2. Data</h2>
+
+  <h3>2.1 Dataset</h3>
+
+  <p>
+    The analysis uses the <strong>FlyRank ML Internship warehouse</strong>
+    provided as part of the internship dataset release.
+  </p>
+
+  <p>
+    The warehouse was queried using DuckDB. The full daily-performance release
+    contains tens of millions of records, so the analytical workflow queries
+    the warehouse directly rather than loading the complete dataset into
+    pandas.
+  </p>
+
+  <p>The analysis uses two primary warehouse components:</p>
+
+  <ul>
+    <li><code>dim_content.parquet</code></li>
+    <li><code>fact_content_daily_performance/**/*.parquet</code></li>
+  </ul>
+
+  <p>The daily performance data contains page-level search and engagement measurements, including:</p>
+
+  <ul>
+    <li>search impressions</li>
+    <li>search clicks</li>
+    <li>average search position</li>
+    <li>sessions</li>
+    <li>engaged sessions</li>
+    <li>total engagement time</li>
+    <li>reporting date</li>
+    <li>pseudonymized content identifiers</li>
+  </ul>
+
+  <p>
+    The analysis uses pseudonymized content identifiers rather than client
+    names, domains, URLs, or private search queries.
+  </p>
+
+  <h3>2.2 Time Windows</h3>
+
+  <p>The modeling workflow uses repeated historical and future windows.</p>
+
+  <ul>
+    <li><strong>Historical feature window:</strong> previous 28 days</li>
+    <li><strong>Future outcome window:</strong> following 28 days</li>
+  </ul>
+
+  <p>
+    The analysis covers the available modeling period from late 2025 through
+    mid-2026.
+  </p>
+
+  <p>
+    Cutoff dates are generated at 14-day intervals. The final chronological
+    test observations include cutoff dates through <strong>May 27, 2026</strong>.
+  </p>
+
+  <p>
+    Pages are required to have at least 14 active days in both the historical
+    and future windows. This reduces the influence of pages with very sparse
+    observations.
+  </p>
+
+  <h3>2.3 Page-Level Aggregation</h3>
+
+  <p>
+    Daily records are aggregated by reporting date and content identifier.
+  </p>
+
+  <table>
+    <tr>
+      <th>Metric</th>
+      <th>Aggregation</th>
+    </tr>
+    <tr>
+      <td>Impressions</td>
+      <td>Sum</td>
+    </tr>
+    <tr>
+      <td>Clicks</td>
+      <td>Sum</td>
+    </tr>
+    <tr>
+      <td>Average position</td>
+      <td>Mean</td>
+    </tr>
+    <tr>
+      <td>Sessions</td>
+      <td>Sum</td>
+    </tr>
+    <tr>
+      <td>Engaged sessions</td>
+      <td>Sum</td>
+    </tr>
+    <tr>
+      <td>Engagement time</td>
+      <td>Sum</td>
+    </tr>
+  </table>
+
+  <p>
+    This produces a page-level daily modeling table that is then used to
+    construct repeated historical and future windows.
+  </p>
+
+  <h3>2.4 Public-Safe Data Handling</h3>
+
+  <p>
+    The analysis does not use client names, domains, URLs, private search
+    queries, credentials, or raw client-level exports as predictive information.
+  </p>
+
+  <p>
+    Client identifiers and URLs are not used as model features.
+  </p>
+
+  <p>
+    The public presentation uses pseudonymized content identifiers and
+    aggregated performance signals.
+  </p>
+
+
+  <h2>3. Methodology</h2>
+
+  <h3>3.1 Historical Feature Window</h3>
+
+  <p>
+    For every page and cutoff date, features are calculated from the preceding
+    28 days.
+  </p>
+
+  <p>The modeled historical signals include:</p>
+
+  <ul>
+    <li>historical impressions</li>
+    <li>historical clicks</li>
+    <li>historical average search position</li>
+    <li>historical sessions</li>
+    <li>engaged sessions</li>
+    <li>engagement time</li>
+    <li>historical active days</li>
+    <li>click-through rate</li>
+    <li>engagement rate</li>
+    <li>log-transformed traffic measures</li>
+    <li>position risk</li>
+    <li>low-CTR signal</li>
+    <li>low-engagement signal</li>
+    <li>a declining-signal feature present in the reported notebook experiment</li>
+  </ul>
+
+  <h3>3.2 Future Outcome Window</h3>
+
+  <p>
+    The following 28 days are used to measure subsequent observed performance.
+  </p>
+
+  <p>
+    The future window is used to construct the target label based on changes
+    in impressions, clicks, and sessions.
+  </p>
+
+  <p>
+    The intended modeling design is that future performance should be reserved
+    for outcome construction rather than prediction.
+  </p>
+
+  <div class="warning">
+    <strong>Important implementation issue:</strong>
+    The reported notebook includes a <code>declining_signal</code> feature
+    derived from future-window decline information. This information overlaps
+    with the information used to construct the target and therefore creates
+    <strong>target leakage</strong>.
+  </div>
+
+  <p>
+    Consequently, the reported machine-learning metrics should be interpreted
+    as results from the implemented notebook experiment rather than as a clean
+    leakage-free estimate of future ranking performance.
+  </p>
+
+  <h3>3.3 Label Definition</h3>
+
+  <p>
+    A page is classified as a <strong>refresh-opportunity page</strong> when at
+    least two of three major performance signals show a decline of 20% or more
+    between the historical and future windows.
+  </p>
+
+  <p>The three signals are:</p>
+
+  <ol>
+    <li>impressions</li>
+    <li>clicks</li>
+    <li>sessions</li>
+  </ol>
+
+  <p>
+    For each signal, relative change is calculated between the historical and
+    future periods.
+  </p>
+
+  <p>
+    A decline signal is counted when the relative change is less than or equal
+    to <strong>-20%</strong>.
+  </p>
+
+  <p>
+    The final target is:
+  </p>
+
+  <blockquote>
+    <strong>
+      Refresh Opportunity = 1 when at least two major signals decline by 20%
+      or more; otherwise 0.
+    </strong>
+  </blockquote>
+
+  <p>
+    This is a constructed decision-support label rather than a direct
+    measurement of whether a page objectively requires a content refresh.
+  </p>
+
+  <h3>3.4 Feature Engineering</h3>
+
+  <p>
+    The reported modeling dataset contains
+    <strong>4,228,038 observations and 16 features</strong>.
+  </p>
+
+  <p>The feature set used in the notebook experiment includes:</p>
+
+  <ul>
+    <li><code>hist_impressions</code></li>
+    <li><code>hist_clicks</code></li>
+    <li><code>hist_avg_position</code></li>
+    <li><code>hist_sessions</code></li>
+    <li><code>hist_engaged_sessions</code></li>
+    <li><code>hist_engagement_sec</code></li>
+    <li><code>hist_active_days</code></li>
+    <li><code>hist_ctr</code></li>
+    <li><code>hist_engagement_rate</code></li>
+    <li><code>log_impressions</code></li>
+    <li><code>log_clicks</code></li>
+    <li><code>log_sessions</code></li>
+    <li><code>position_risk</code></li>
+    <li><code>low_ctr_signal</code></li>
+    <li><code>low_engagement_signal</code></li>
+    <li><code>declining_signal</code></li>
+  </ul>
+
+  <p>The target distribution is:</p>
+
+  <table>
+    <tr>
+      <th>Class</th>
+      <th>Count</th>
+    </tr>
+    <tr>
+      <td>No refresh opportunity</td>
+      <td>3,868,857</td>
+    </tr>
+    <tr>
+      <td>Refresh opportunity</td>
+      <td>359,181</td>
+    </tr>
+  </table>
+
+  <p>
+    The <code>declining_signal</code> feature is acknowledged as a leakage
+    issue because it incorporates information related to the future decline
+    used to define the target.
+  </p>
+
+  <h3>3.5 Baseline</h3>
+
+  <p>
+    A transparent rule-based baseline was used as an interpretable reference
+    point.
+  </p>
+
+  <p>The baseline combines observable opportunity indicators such as:</p>
+
+  <ul>
+    <li>declining signal</li>
+    <li>position risk</li>
+    <li>low CTR signal</li>
+    <li>low engagement signal</li>
+  </ul>
+
+  <p>
+    The purpose of the baseline is to provide a simple comparison against
+    supervised ranking models.
+  </p>
+
+  <p>
+    Because the declining signal itself is affected by the same future
+    information used to construct the target, the baseline should also be
+    regarded as exploratory rather than a leakage-free benchmark.
+  </p>
+
+  <h3>3.6 Models</h3>
+
+  <p>Two supervised learning models were evaluated.</p>
+
+  <h3>Logistic Regression</h3>
+
+  <ul>
+    <li>StandardScaler</li>
+    <li>LogisticRegression</li>
+    <li><code>class_weight="balanced"</code></li>
+    <li>maximum iterations of 1,000</li>
+    <li>fixed random state for reproducibility</li>
+  </ul>
+
+  <h3>Random Forest</h3>
+
+  <ul>
+    <li>150 trees</li>
+    <li>maximum depth of 10</li>
+    <li>minimum 20 samples per leaf</li>
+    <li>balanced class weighting</li>
+    <li>fixed random state</li>
+    <li>parallel processing</li>
+  </ul>
+
+  <h3>3.7 Chronological Validation</h3>
+
+  <p>
+    Because the problem is time-dependent, the data was not randomly split.
+  </p>
+
+  <p>
+    Instead, unique cutoff dates were ordered chronologically. Earlier cutoff
+    observations were used for training, while later cutoff observations were
+    reserved for testing.
+  </p>
+
+  <p><strong>Training Cutoffs:</strong></p>
+
+  <p>
+    October 29, 2025 through April 1, 2026.
+  </p>
+
+  <p><strong>Testing Cutoffs:</strong></p>
+
+  <ul>
+    <li>April 15, 2026</li>
+    <li>April 29, 2026</li>
+    <li>May 13, 2026</li>
+    <li>May 27, 2026</li>
+  </ul>
+
+  <p>
+    This validation structure better reflects the intended use case of using
+    previously observed information to prioritize future review opportunities.
+  </p>
+
+
+  <h2>4. Results</h2>
+
+  <p>
+    The models were evaluated on the same chronological test period.
+  </p>
+
+  <p>
+    The evaluation focuses on ranking quality because the practical objective
+    is to identify a manageable shortlist of pages for human review rather
+    than to treat every observation equally.
+  </p>
+
+  <p>The reported metrics include:</p>
+
+  <ul>
+    <li>Precision</li>
+    <li>Recall</li>
+    <li>Average Precision</li>
+    <li>Precision@K</li>
+    <li>Recall@K</li>
+  </ul>
+
+  <p>
+    Accuracy is not treated as the primary success criterion because the
+    operational task is prioritization.
+  </p>
+
+  <h3>4.1 Overall Model Performance</h3>
+
+  <table>
+    <tr>
+      <th>Model</th>
+      <th>Precision</th>
+      <th>Recall</th>
+      <th>Average Precision</th>
+    </tr>
+    <tr>
+      <td>Transparent baseline</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>Logistic Regression</td>
+      <td>0.472</td>
+      <td>0.960</td>
+      <td><strong>0.639</strong></td>
+    </tr>
+    <tr>
+      <td>Random Forest</td>
+      <td>0.587</td>
+      <td>1.000</td>
+      <td><strong>0.690</strong></td>
+    </tr>
+  </table>
+
+  <p>
+    In the reported notebook experiment, Random Forest achieved the strongest
+    Average Precision among the evaluated machine-learning models.
+  </p>
+
+  <p>
+    Its Average Precision was approximately <strong>0.690</strong>, compared
+    with <strong>0.639</strong> for Logistic Regression.
+  </p>
+
+  <p>
+    These values are reported exactly as observed in the existing notebook.
+    Due to the target-leakage issue described in Section 5, they should not be
+    interpreted as unbiased estimates of leakage-free real-world performance.
+  </p>
+
+  <h3>4.2 Ranking Evaluation</h3>
+
+  <p>
+    Because the practical objective is to prioritize a review queue, top-of-
+    ranking performance was also evaluated.
+  </p>
+
+  <table>
+    <tr>
+      <th>K</th>
+      <th>Logistic Regression Precision@K</th>
+      <th>Random Forest Precision@K</th>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td>0.85</td>
+      <td><strong>1.00</strong></td>
+    </tr>
+    <tr>
+      <td>50</td>
+      <td>0.92</td>
+      <td><strong>1.00</strong></td>
+    </tr>
+    <tr>
+      <td>100</td>
+      <td>0.95</td>
+      <td><strong>0.98</strong></td>
+    </tr>
+  </table>
+
+  <p>
+    The reported Random Forest ranking places a high concentration of observed
+    refresh-opportunity cases near the top of the ranking.
+  </p>
+
+  <p>
+    Precision@20 and Precision@50 were both <strong>1.00</strong>, while
+    Precision@100 was <strong>0.98</strong> on the chronological test set.
+  </p>
+
+  <p>
+    Recall@K is much smaller because K represents only a tiny fraction of the
+    millions of test observations. Therefore, Average Precision and top-K
+    precision provide more useful measures for the intended prioritization task.
+  </p>
+
+  <p>
+    Again, these ranking results are exploratory because of the leakage
+    identified in the feature construction.
+  </p>
+
+  <h3>4.3 Ranking Output</h3>
+
+  <p>
+    The Random Forest score is used to create a ranked review queue.
+  </p>
+
+  <p>Each recommendation can contain:</p>
+
+  <ul>
+    <li>rank</li>
+    <li>pseudonymized content identifier</li>
+    <li>model score</li>
+    <li>suggested action</li>
+    <li>reason codes</li>
+  </ul>
+
+  <p>
+    The highest-ranked pages form the initial review queue.
+  </p>
+
+  <p>
+    The score determines prioritization, while reason codes provide additional
+    context for human reviewers.
+  </p>
+
+
+  <h2>5. Limitations &amp; Honest Framing</h2>
+
+  <p>
+    The most important limitation of the reported experiment is
+    <strong>target leakage</strong>.
+  </p>
+
+  <p>
+    The notebook includes a <code>declining_signal</code> feature that is
+    derived from future-window decline information. The same future-window
+    decline information contributes to the construction of the refresh-
+    opportunity target.
+  </p>
+
+  <p>
+    This means that the model has access to information that would not be
+    available at the time a real-world ranking decision is made.
+  </p>
+
+  <div class="warning">
+    Therefore, the reported Average Precision and Precision@K values should
+    <strong>not</strong> be interpreted as reliable estimates of production
+    performance.
+  </div>
+
+  <p>
+    This limitation does not invalidate the broader analytical idea of using
+    historical search and engagement signals for content prioritization, but
+    it means that the reported model metrics are best treated as an exploratory
+    result from the implemented experiment.
+  </p>
+
+  <p>
+    A leakage-free version would remove the outcome-derived feature and rerun
+    the complete training and evaluation workflow before the model could be
+    considered ready for production use.
+  </p>
+
+  <p>Other limitations also apply.</p>
+
+  <p>
+    This analysis is observational and does not establish that refreshing a
+    page will cause its performance to improve.
+  </p>
+
+  <p>
+    The target is a constructed decision-support label based on observed
+    changes in impressions, clicks, and sessions. It is therefore not a direct
+    measurement of whether a page actually needed a content refresh.
+  </p>
+
+  <p>
+    The dataset contains aggregated search and engagement signals rather than
+    detailed editorial information.
+  </p>
+
+  <p>Factors such as:</p>
+
+  <ul>
+    <li>content quality</li>
+    <li>search intent</li>
+    <li>competition</li>
+    <li>seasonality</li>
+    <li>technical issues</li>
+    <li>external events</li>
+  </ul>
+
+  <p>
+    may influence observed performance.
+  </p>
+
+  <p>
+    The model should therefore be interpreted as a
+    <strong>prioritization experiment rather than an automated decision maker</strong>.
+  </p>
+
+  <p>
+    The analysis also does not prove anything about Google's ranking algorithm
+    and does not establish causal relationships between content changes and
+    search performance.
+  </p>
+
+
+  <h2>6. Ranked Recommendations</h2>
+
+  <p>
+    The ranking system is intended to help a reviewer decide where to begin
+    investigation.
+  </p>
+
+  <h3>Refresh / Review</h3>
+
+  <p>
+    Pages showing meaningful deterioration across multiple performance signals
+    can receive higher review priority.
+  </p>
+
+  <p>
+    A reviewer can investigate whether content freshness, relevance, structure,
+    or intent alignment may warrant attention.
+  </p>
+
+  <h3>CTR Review</h3>
+
+  <p>
+    Pages receiving search visibility but comparatively weak click capture can
+    be investigated for potential title, snippet, metadata, or search-intent
+    opportunities.
+  </p>
+
+  <h3>Visibility Review</h3>
+
+  <p>
+    Pages with weaker observed average search position can be investigated for:
+  </p>
+
+  <ul>
+    <li>content depth</li>
+    <li>relevance</li>
+    <li>internal linking</li>
+    <li>competitive changes</li>
+  </ul>
+
+  <h3>Engagement Review</h3>
+
+  <p>
+    Pages with relatively weak engagement signals can be reviewed for:
+  </p>
+
+  <ul>
+    <li>content usefulness</li>
+    <li>structure</li>
+    <li>intent alignment</li>
+    <li>user experience</li>
+  </ul>
+
+  <h3>Monitor</h3>
+
+  <p>
+    Pages without strong deterioration signals can remain in a monitoring
+    queue rather than being automatically changed.
+  </p>
+
+  <p>
+    These categories are <strong>human-review recommendations</strong>, not
+    automated editorial decisions.
+  </p>
+
+
+  <h2>7. Reproducibility</h2>
+
+  <p>
+    The analysis was developed in Python using DuckDB and scikit-learn.
+  </p>
+
+  <p>
+    The warehouse was queried directly using DuckDB rather than loading the
+    full daily-performance release into memory.
+  </p>
+
+  <p>The modeling workflow consists of:</p>
+
+  <ol>
+    <li>Aggregating daily page-level performance.</li>
+    <li>Creating repeated 28-day historical feature windows.</li>
+    <li>Creating subsequent 28-day outcome windows.</li>
+    <li>Constructing the refresh-opportunity label from observed deterioration.</li>
+    <li>Performing chronological train/test validation.</li>
+    <li>Comparing a transparent rule-based approach with Logistic Regression and Random Forest.</li>
+    <li>Evaluating ranking quality using Average Precision and Precision@K.</li>
+    <li>Generating a ranked review queue with reason codes and action recommendations.</li>
+  </ol>
+
+  <h3>Project Artifacts</h3>
+
+  <ul>
+    <li><strong>Capstone notebook:</strong> <code>work/notebooks/capstone.ipynb</code></li>
+    <li><strong>Research paper:</strong> <code>work/paper/research_paper.md</code></li>
+    <li><strong>Recommendation artifact:</strong> <code>top20_content_recommendations.csv</code></li>
+    <li><strong>Model comparison:</strong> <code>model_results.csv</code></li>
+  </ul>
+
+  <p>
+    The notebook provides the executable record of the analysis and documents
+    the data-processing, modeling, and evaluation workflow.
+  </p>
+
+
+  <h2>8. Artifacts and Visual Evidence</h2>
+
+  <p>
+    The analysis produces artifacts that support the modeling and recommendation
+    workflow.
+  </p>
+
+  <h3>Model Comparison</h3>
+
+  <p>
+    A model comparison visualization summarizes the ranking performance of the
+    evaluated approaches. In the reported experiment, Random Forest achieved
+    the highest Average Precision among the machine-learning models.
+  </p>
+
+  <h3>Score Distribution</h3>
+
+  <p>
+    The score distribution illustrates how model ranking scores are distributed
+    across the chronological test observations.
+  </p>
+
+  <h3>Top 20 Review Priorities</h3>
+
+  <p>
+    The top-20 recommendation artifact identifies the highest-ranked
+    pseudonymized content observations and their associated model scores.
+  </p>
+
+  <h3>Action Distribution</h3>
+
+  <p>
+    The action distribution summarizes the suggested review categories
+    generated by the recommendation workflow.
+  </p>
+
+  <p>
+    These artifacts provide visual and tabular evidence for the exploratory
+    evaluation and demonstrate how model scores can be translated into a
+    human-review queue.
+  </p>
+
+
+  <h2>9. Acknowledgments &amp; Data Credit</h2>
+
+  <p>
+    This project was developed as part of the
+    <strong>FlyRank ML Internship capstone</strong>, Lane 2:
+    <strong>Refresh / Content Opportunity Scoring</strong>.
+  </p>
+
+  <p>
+    The analysis uses the <strong>FlyRank internship dataset</strong> and
+    follows the public-safe requirements of the assignment.
+  </p>
+
+  <p>
+    The project uses pseudonymized identifiers and aggregated performance
+    signals. It does not expose client names, domains, URLs, private queries,
+    credentials, or raw client exports.
+  </p>
+
+  <p>
+    <strong>Data source:</strong> FlyRank
+  </p>
+
+  <p>
+    The work is intended as an independent analytical and modeling exercise
+    using the provided internship warehouse.
+  </p>
+
+  <p>
+    The reported results represent the behavior of the implemented notebook
+    experiment. Because a target-leakage issue was identified in the current
+    feature set, the machine-learning metrics should be treated as exploratory
+    and should not be interpreted as production-ready estimates.
+  </p>
+
+  <p>
+    The project does not claim causal evidence about search-engine algorithms
+    or the effect of content changes. 
+  </p>
+
+
+  <div class="footer">
+    <strong>FlyRank ML Internship — Lane 2: Refresh / Content Opportunity Scoring</strong>
+    <br>
+    Content Opportunity Scoring for Prioritizing Pages for Human Review
+  </div>
+
+</div>
+
+</body>
+</html>
