@@ -1,3 +1,8 @@
+---
+layout: default
+title: Content Opportunity Scoring for Prioritizing Pages for Human Review
+---
+
 # Content Opportunity Scoring for Prioritizing Pages for Human Review
 
 ## Abstract
